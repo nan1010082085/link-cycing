@@ -37,6 +37,7 @@
     "@tsconfig/node22": "^22.0.2",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.16.5",
+    "@types/web-bluetooth": "^0.0.21",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitejs/plugin-vue-jsx": "^5.0.1",
     "@vue/test-utils": "^2.4.6",

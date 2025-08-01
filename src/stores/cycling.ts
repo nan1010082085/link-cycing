@@ -15,6 +15,8 @@ export interface DeviceInfo {
   type: CyclingDeviceType
   /** 连接状态 */
   connected: boolean
+  /** 自动重连设置 */
+  autoReconnect?: boolean
   /** 最后连接时间 */
   lastConnected?: Date
   /** 设备信息 */
@@ -39,6 +41,10 @@ export interface RidingDataPoint {
   power?: number
   /** 心率 (bpm) */
   heartRate?: number
+  /** 阻力 */
+  resistance?: number
+  /** 距离 (km) */
+  distance?: number
   /** 变速档位 */
   gear?: {
     front: number
@@ -62,6 +68,8 @@ export interface RidingSession {
   stats: {
     /** 总时间 (秒) */
     totalTime: number
+    /** 总距离 (km) */
+    totalDistance?: number
     /** 平均功率 (watts) */
     avgPower?: number
     /** 最大功率 (watts) */
@@ -72,6 +80,10 @@ export interface RidingSession {
     maxHeartRate?: number
     /** 平均踏频 (rpm) */
     avgCadence?: number
+    /** 平均阻力 */
+    avgResistance?: number
+    /** 最大阻力 */
+    maxResistance?: number
   }
 }
 

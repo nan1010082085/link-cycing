@@ -26,6 +26,8 @@ export interface ElectronicShiftingData {
   frontChainring?: number
   /** 后飞轮齿数 */
   rearCassette?: number
+  /** 电池电量 (%) */
+  batteryLevel?: number
   /** 变速器电池电量 */
   shifterBatteryLevel?: number
   /** 变速器状态 */
@@ -76,6 +78,10 @@ export interface PowerMeterData {
   powerBalance?: number
   /** 扭矩 */
   torque?: number
+  /** 曲柄转数 */
+  crankRevolutions?: number
+  /** 曲柄事件时间 */
+  crankEventTime?: number
 }
 
 /**

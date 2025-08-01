@@ -11,7 +11,7 @@
             :max="100"
             :step="1"
             @change="onResistanceChange"
-            :tooltip-formatter="(value) => `${value}%`"
+            :tooltip-formatter="(value: number) => `${value}%`"
           />
           <div class="control-buttons">
             <a-button size="small" @click="setQuickResistance(25)">25%</a-button>
@@ -110,7 +110,7 @@
           <a-progress
             :percent="device.deviceInfo.batteryLevel"
             :status="device.deviceInfo.batteryLevel < 20 ? 'exception' : 'normal'"
-            :format="(percent) => `电量 ${percent}%`"
+            :format="(percent: number) => `电量 ${percent}%`"
           />
         </div>
       </div>
@@ -171,13 +171,11 @@ const powerTarget = ref(200)
 
 // 计算属性
 const currentHeartRate = computed(() => {
-  return cyclingStore.heartRate || 0
+  return cyclingStore.currentRidingData.heartRate || 0
 })
 
-
-
 const currentCadence = computed(() => {
-  return cyclingStore.cadence || 0
+  return cyclingStore.currentRidingData.cadence || 0
 })
 
 // 方法

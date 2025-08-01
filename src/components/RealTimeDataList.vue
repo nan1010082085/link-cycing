@@ -4,23 +4,23 @@
       <template #extra>
         <div class="list-controls">
           <a-space>
-            <a-switch 
-              v-model:checked="autoScroll" 
+            <a-switch
+              v-model:checked="autoScroll"
               size="small"
               checked-children="自动滚动"
               un-checked-children="手动滚动"
             />
-            <a-button 
-              size="small" 
-              type="text" 
+            <a-button
+              size="small"
+              type="text"
               @click="clearData"
               :disabled="dataPoints.length === 0"
             >
               <DeleteOutlined /> 清空
             </a-button>
-            <a-button 
-              size="small" 
-              type="text" 
+            <a-button
+              size="small"
+              type="text"
               @click="exportData"
               :disabled="dataPoints.length === 0"
             >
@@ -29,45 +29,45 @@
           </a-space>
         </div>
       </template>
-      
+
       <!-- 数据统计摘要 -->
       <div class="data-summary" v-if="dataPoints.length > 0">
         <a-row :gutter="16">
           <a-col :span="6">
-            <a-statistic 
-              title="数据点数" 
-              :value="dataPoints.length" 
+            <a-statistic
+              title="数据点数"
+              :value="dataPoints.length"
               suffix="个"
               :value-style="{ fontSize: '14px' }"
             />
           </a-col>
           <a-col :span="6">
-            <a-statistic 
-              title="记录时长" 
-              :value="formatDuration(recordingDuration)" 
+            <a-statistic
+              title="记录时长"
+              :value="formatDuration(recordingDuration)"
               :value-style="{ fontSize: '14px' }"
             />
           </a-col>
           <a-col :span="6">
-            <a-statistic 
-              title="平均功率" 
-              :value="averagePower" 
+            <a-statistic
+              title="平均功率"
+              :value="averagePower"
               suffix="W"
               :precision="0"
               :value-style="{ fontSize: '14px' }"
             />
           </a-col>
           <a-col :span="6">
-            <a-statistic 
-              title="最大功率" 
-              :value="maxPower" 
+            <a-statistic
+              title="最大功率"
+              :value="maxPower"
               suffix="W"
               :value-style="{ fontSize: '14px' }"
             />
           </a-col>
         </a-row>
       </div>
-      
+
       <!-- 数据列表 -->
       <div class="data-list-container" ref="listContainer">
         <div class="data-list-header">
@@ -78,15 +78,15 @@
           <div class="header-item heart-rate-col">心率</div>
           <div class="header-item gear-col">档位</div>
         </div>
-        
+
         <div class="data-list-body" v-if="dataPoints.length > 0">
-          <div 
-            v-for="(point, index) in displayedDataPoints" 
+          <div
+            v-for="(point, index) in displayedDataPoints"
             :key="point.timestamp"
             class="data-row"
-            :class="{ 
+            :class="{
               'latest-row': index === displayedDataPoints.length - 1,
-              'highlight-row': (point as any).isHighlight 
+              'highlight-row': (point as any).isHighlight,
             }"
           >
             <div class="data-item time-col">
@@ -118,25 +118,24 @@
             </div>
             <div class="data-item gear-col">
               <span v-if="(point as any).electronicShifting">
-                {{ (point as any).electronicShifting?.frontGear || '-' }}×{{ (point as any).electronicShifting?.rearGear || '-' }}
+                {{ (point as any).electronicShifting?.frontGear || '-' }}×{{
+                  (point as any).electronicShifting?.rearGear || '-'
+                }}
               </span>
               <span v-else>-</span>
             </div>
           </div>
         </div>
-        
+
         <div class="empty-state" v-else>
-          <a-empty 
-            description="暂无数据记录"
-            :image="Empty.PRESENTED_IMAGE_SIMPLE"
-          >
+          <a-empty description="暂无数据记录" :image="Empty.PRESENTED_IMAGE_SIMPLE">
             <template #description>
-              <span style="color: #999;">开始骑行后将显示实时数据</span>
+              <span style="color: #999">开始骑行后将显示实时数据</span>
             </template>
           </a-empty>
         </div>
       </div>
-      
+
       <!-- 分页控制 -->
       <div class="pagination-controls" v-if="dataPoints.length > pageSize">
         <a-pagination
@@ -188,7 +187,7 @@ const recordingDuration = computed(() => {
 
 const averagePower = computed(() => {
   if (dataPoints.value.length === 0) return 0
-  const validPowers = dataPoints.value.filter(p => p.power !== undefined && p.power > 0)
+  const validPowers = dataPoints.value.filter((p) => p.power !== undefined && p.power > 0)
   if (validPowers.length === 0) return 0
   const sum = validPowers.reduce((acc, p) => acc + (p.power || 0), 0)
   return sum / validPowers.length
@@ -196,7 +195,7 @@ const averagePower = computed(() => {
 
 const maxPower = computed(() => {
   if (dataPoints.value.length === 0) return 0
-  return Math.max(...dataPoints.value.map(p => p.power || 0))
+  return Math.max(...dataPoints.value.map((p) => p.power || 0))
 })
 
 // 监听数据变化，自动滚动到最新数据
@@ -207,11 +206,11 @@ watch(
       // 自动跳转到最后一页
       const totalPages = Math.ceil(newLength / pageSize.value)
       currentPage.value = totalPages
-      
+
       await nextTick()
       scrollToBottom()
     }
-  }
+  },
 )
 
 /**
@@ -240,7 +239,7 @@ function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
-  
+
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
@@ -338,15 +337,14 @@ function exportData() {
       exportTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
       totalPoints: dataPoints.value.length,
       duration: recordingDuration.value,
-      averageSpeed: averageSpeed.value,
       maxPower: maxPower.value,
-      dataPoints: dataPoints.value
+      dataPoints: dataPoints.value,
     }
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json'
+      type: 'application/json',
     })
-    
+
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -355,7 +353,7 @@ function exportData() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     message.success('数据导出成功')
   } catch (error) {
     console.error('导出数据失败:', error)
@@ -514,16 +512,16 @@ function exportData() {
     grid-template-columns: 60px 60px 60px 60px 60px 50px;
     font-size: 11px;
   }
-  
+
   .header-item,
   .data-item {
     padding: 4px 6px;
   }
-  
+
   .data-value {
     font-size: 12px;
   }
-  
+
   .data-unit {
     font-size: 9px;
   }
@@ -535,16 +533,16 @@ function exportData() {
     grid-template-columns: 50px 50px 50px 50px 50px 40px;
     font-size: 10px;
   }
-  
+
   .header-item,
   .data-item {
     padding: 3px 4px;
   }
-  
+
   .data-summary {
     padding: 8px;
   }
-  
+
   .data-list-body {
     max-height: 300px;
   }

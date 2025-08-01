@@ -368,6 +368,8 @@ export const useBluetoothStore = defineStore('bluetooth', () => {
     cadence?: number
     torque?: number
     balance?: number
+    crankRevolutions?: number
+    crankEventTime?: number
   } {
     const flags = data.getUint16(0, true) // 小端序
     let offset = 2
@@ -489,6 +491,8 @@ export const useBluetoothStore = defineStore('bluetooth', () => {
     power?: number
     resistance?: number
     heartRate?: number
+    crankRevolutions?: number
+    crankEventTime?: number
   } {
     const flags = data.getUint16(0, true)
     let offset = 2
@@ -764,7 +768,10 @@ export const useBluetoothStore = defineStore('bluetooth', () => {
       }
 
       const device = await navigator.bluetooth.requestDevice({
-        filters: serviceConfig.filters,
+        filters: serviceConfig.filters.map(filter => ({
+             ...filter,
+             ...('services' in filter && { services: [...filter.services] })
+           }) as BluetoothLEScanFilter),
         optionalServices: [serviceConfig.service],
       })
 
@@ -824,7 +831,10 @@ export const useBluetoothStore = defineStore('bluetooth', () => {
         const serviceConfig = BLUETOOTH_SERVICES[deviceType]
         if (serviceConfig) {
           allServices.push(serviceConfig.service)
-          allFilters.push(...serviceConfig.filters)
+          allFilters.push(...serviceConfig.filters.map(filter => ({
+               ...filter,
+               ...('services' in filter && { services: [...filter.services] })
+             }) as BluetoothLEScanFilter))
           serviceToTypeMap.set(serviceConfig.service, deviceType)
         }
       }
@@ -1253,7 +1263,7 @@ export const useBluetoothStore = defineStore('bluetooth', () => {
    * 检查设备是否已连接
    */
   function isDeviceConnected(deviceId: string): boolean {
-    const connection = deviceConnections.value[deviceId]
+    const connection = deviceConnections.value.get(deviceId)
     if (!connection || !connection.device.gatt) {
       return false
     }

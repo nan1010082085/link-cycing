@@ -27,7 +27,12 @@
                 <div class="device-details">
                   <span v-if="device.autoReconnect" class="auto-reconnect-tag">自动重连</span>
                   <span class="last-connected"
-                    >上次连接: {{ new Date(device.lastConnected).toLocaleString() }}</span
+                    >上次连接:
+                    {{
+                      device.lastConnected
+                        ? new Date(device.lastConnected).toLocaleString()
+                        : '从未连接'
+                    }}</span
                   >
                 </div>
               </div>
@@ -75,7 +80,7 @@
                     <template #icon>
                       <ThunderboltOutlined />
                     </template>
-                    智能扫描（推荐）
+                    智能扫描
                   </a-menu-item>
                   <a-menu-item key="multi">
                     <template #icon>
@@ -87,7 +92,7 @@
                     <template #icon>
                       <SearchOutlined />
                     </template>
-                    单设备扫描
+                    单设备扫描（推荐）
                   </a-menu-item>
                 </a-menu>
               </template>
@@ -542,7 +547,7 @@ const deviceTypeStringToEnum: Record<string, CyclingDeviceType> = {
  * 将字符串设备类型转换为枚举
  */
 function convertStringToDeviceType(typeString: string): CyclingDeviceType {
-  return deviceTypeStringToEnum[typeString] || CyclingDeviceType.MULTI_SENSOR
+  return deviceTypeStringToEnum[typeString] || CyclingDeviceType.TRAINER
 }
 
 // 设备类型判断逻辑已移至 useBluetooth hooks 中
@@ -629,34 +634,29 @@ function handleConnectionError(error: any, deviceName: string): void {
 
     if (cleanMessage.includes('连接超时')) {
       message.error({
-        content: `连接 ${deviceName} 超时`,
-        description: '请确保设备处于可连接状态，并尝试重新连接',
+        content: `连接 ${deviceName} 超时，请确保设备处于可连接状态，并尝试重新连接`,
         duration: 5,
       })
     } else if (cleanMessage.includes('设备未找到')) {
       message.error({
-        content: `未找到设备 ${deviceName}`,
-        description: '请重新扫描设备或确保设备已开启',
+        content: `未找到设备 ${deviceName}，请重新扫描设备或确保设备已开启`,
         duration: 5,
       })
     } else if (cleanMessage.includes('无法获取设备服务')) {
       message.error({
-        content: `设备 ${deviceName} 服务不兼容`,
-        description: '设备可能不支持所选的服务类型，请检查设备类型选择',
+        content: `设备 ${deviceName} 服务不兼容，设备可能不支持所选的服务类型，请检查设备类型选择`,
         duration: 5,
       })
     } else if (cleanMessage.includes('无法获取任何特征值')) {
       message.error({
-        content: `设备 ${deviceName} 特征值获取失败`,
-        description: '设备可能不完全兼容，请尝试其他设备类型或联系设备厂商',
+        content: `设备 ${deviceName} 特征值获取失败，设备可能不完全兼容，请尝试其他设备类型或联系设备厂商`,
         duration: 5,
       })
     } else if (cleanMessage.includes('设备已连接')) {
       message.warning(`设备 ${deviceName} 已经连接`)
     } else {
       message.error({
-        content: `连接 ${deviceName} 失败`,
-        description: cleanMessage,
+        content: `连接 ${deviceName} 失败：${cleanMessage}`,
         duration: 5,
       })
     }
@@ -666,8 +666,7 @@ function handleConnectionError(error: any, deviceName: string): void {
   // 检查是否是'value'属性未定义的错误
   if (errorMessage.includes("Cannot read properties of undefined (reading 'value')")) {
     message.error({
-      content: `设备 ${deviceName} 数据读取失败`,
-      description: '请重试连接或检查设备状态',
+      content: `设备 ${deviceName} 数据读取失败，请重试连接或检查设备状态`,
       duration: 5,
     })
     return
@@ -677,43 +676,37 @@ function handleConnectionError(error: any, deviceName: string): void {
   switch (error.name) {
     case 'NetworkError':
       message.error({
-        content: `网络错误：无法连接到 ${deviceName}`,
-        description: '请检查设备是否在范围内并重试',
+        content: `网络错误：无法连接到 ${deviceName}，请检查设备是否在范围内并重试`,
         duration: 5,
       })
       break
     case 'SecurityError':
       message.error({
-        content: '安全错误',
-        description: '请确保在HTTPS环境下使用蓝牙功能',
+        content: '安全错误，请确保在HTTPS环境下使用蓝牙功能',
         duration: 5,
       })
       break
     case 'NotSupportedError':
       message.error({
-        content: `设备 ${deviceName} 不支持所需的服务`,
-        description: '请检查设备类型选择是否正确',
+        content: `设备 ${deviceName} 不支持所需的服务，请检查设备类型选择是否正确`,
         duration: 5,
       })
       break
     case 'InvalidStateError':
       message.error({
-        content: `设备 ${deviceName} 状态无效`,
-        description: '请重启设备后重试',
+        content: `设备 ${deviceName} 状态无效，请重启设备后重试`,
         duration: 5,
       })
       break
     case 'NotFoundError':
       message.error({
-        content: `未找到设备 ${deviceName}`,
-        description: '请确保设备已开启并处于可连接状态',
+        content: `未找到设备 ${deviceName}，请确保设备已开启并处于可连接状态`,
         duration: 5,
       })
       break
     case 'AbortError':
       message.error({
-        content: `连接 ${deviceName} 被中断`,
-        description: '请重试连接',
+        content: `连接 ${deviceName} 被中断，请重试连接`,
         duration: 5,
       })
       break
@@ -721,14 +714,12 @@ function handleConnectionError(error: any, deviceName: string): void {
       // 处理其他可能的value相关错误
       if (errorMessage.includes('value') || errorMessage.includes('undefined')) {
         message.error({
-          content: `设备 ${deviceName} 数据格式异常`,
-          description: '请检查设备兼容性或尝试重新连接',
+          content: `设备 ${deviceName} 数据格式异常，请检查设备兼容性或尝试重新连接`,
           duration: 5,
         })
       } else {
         message.error({
-          content: `连接失败: ${errorMessage}`,
-          description: '请检查设备状态并重试',
+          content: `连接失败: ${errorMessage}，请检查设备状态并重试`,
           duration: 5,
         })
       }

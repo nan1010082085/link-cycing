@@ -88,15 +88,15 @@ export class FitExporter {
       }
       
       // 添加统计数据
-      if (session.stats.totalDistance > 0) {
+      if (session.stats.totalDistance && session.stats.totalDistance > 0) {
         sessionMessage.total_distance = session.stats.totalDistance * 1000 // 转换为米
       }
       
-      if (session.stats.avgResistance > 0) {
+      if (session.stats.avgResistance && session.stats.avgResistance > 0) {
         sessionMessage.avg_resistance = session.stats.avgResistance
       }
       
-      if (session.stats.maxResistance > 0) {
+      if (session.stats.maxResistance && session.stats.maxResistance > 0) {
         sessionMessage.max_resistance = session.stats.maxResistance
       }
       
