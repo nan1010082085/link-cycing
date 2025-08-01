@@ -1,14 +1,16 @@
 {
   "name": "link-cycing",
-  "version": "0.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
-  "description": "Link Cycing",
+  "description": "智能骑行数据中心 - 基于 Web Bluetooth API 的骑行设备连接和数据监控平台",
   "keywords": [
     "link-cycing",
     "cycing",
     "vue3",
     "bluetooth",
+    "web-bluetooth",
+    "vite",
     "ant-design-vue"
   ],
   "engines": {

@@ -62,55 +62,29 @@
         <div class="discovery-section">
           <div class="section-header">
             <h3>发现设备</h3>
-            <a-dropdown>
-              <a-button
-                type="primary"
-                :loading="isScanning"
-                :disabled="!bluetoothStore.isSupported"
-              >
-                <template #icon>
-                  <SearchOutlined />
-                </template>
-                {{ isScanning ? '扫描中...' : '智能扫描' }}
-                <DownOutlined />
-              </a-button>
-              <template #overlay>
-                <a-menu @click="handleScanModeSelect">
-                  <a-menu-item key="smart">
-                    <template #icon>
-                      <ThunderboltOutlined />
-                    </template>
-                    智能扫描
-                  </a-menu-item>
-                  <a-menu-item key="multi">
-                    <template #icon>
-                      <AppstoreOutlined />
-                    </template>
-                    多设备扫描
-                  </a-menu-item>
-                  <a-menu-item key="single">
-                    <template #icon>
-                      <SearchOutlined />
-                    </template>
-                    单设备扫描（推荐）
-                  </a-menu-item>
-                </a-menu>
+            <a-button
+              type="primary"
+              :loading="isScanning"
+              :disabled="!bluetoothStore.isSupported"
+              @click="startSingleDeviceDiscovery"
+            >
+              <template #icon>
+                <SearchOutlined />
               </template>
-            </a-dropdown>
+              {{ isScanning ? '扫描中...' : '扫描设备' }}
+            </a-button>
           </div>
 
           <div class="device-type-filters">
             <div class="filter-header">
               <span>选择设备类型：</span>
-              <a-button size="small" type="link" @click="selectAllDeviceTypes">全选</a-button>
-              <a-button size="small" type="link" @click="clearDeviceTypeSelection">清空</a-button>
             </div>
-            <a-checkbox-group v-model:value="selectedDeviceTypes" @change="onDeviceTypeChange">
-              <a-checkbox :value="CyclingDeviceType.TRAINER">骑行台</a-checkbox>
-              <a-checkbox :value="CyclingDeviceType.POWER_METER">功率计</a-checkbox>
-              <a-checkbox :value="CyclingDeviceType.HEART_RATE">心率设备</a-checkbox>
-              <a-checkbox :value="CyclingDeviceType.ELECTRONIC_SHIFTING">电子变速</a-checkbox>
-            </a-checkbox-group>
+            <a-radio-group v-model:value="selectedDeviceType" @change="onDeviceTypeChange">
+              <a-radio :value="CyclingDeviceType.TRAINER">骑行台</a-radio>
+              <a-radio :value="CyclingDeviceType.POWER_METER">功率计</a-radio>
+              <a-radio :value="CyclingDeviceType.HEART_RATE">心率设备</a-radio>
+              <a-radio :value="CyclingDeviceType.ELECTRONIC_SHIFTING">电子变速</a-radio>
+            </a-radio-group>
           </div>
 
           <!-- 连接状态提示 -->
@@ -306,13 +280,8 @@ import {
   WifiOutlined as DeviceIcon,
   ReloadOutlined,
   DeleteOutlined,
-  DownOutlined,
-  ThunderboltOutlined,
-  AppstoreOutlined,
   LoadingOutlined,
   ControlOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useCyclingStore, type DeviceInfo } from '../stores/cycling'
@@ -328,17 +297,11 @@ dayjs.extend(relativeTime)
 // Store
 const cyclingStore = useCyclingStore()
 const bluetoothStore = useBluetoothStore()
-const bluetooth = bluetoothStore
 
 // 响应式数据
 const visible = defineModel()
 const connectingDevices = ref<Set<string>>(new Set())
-const selectedDeviceTypes = ref<CyclingDeviceType[]>([
-  CyclingDeviceType.TRAINER,
-  CyclingDeviceType.POWER_METER,
-  CyclingDeviceType.HEART_RATE,
-  CyclingDeviceType.ELECTRONIC_SHIFTING,
-])
+const selectedDeviceType = ref<CyclingDeviceType>(CyclingDeviceType.TRAINER)
 const currentScanningType = ref<CyclingDeviceType | null>(null)
 const controlPanelVisible = ref(false)
 const selectedDevice = ref<DeviceInfo | null>(null)
@@ -349,42 +312,6 @@ const discoveredDevices = computed(() => bluetoothStore.discoveredDevices)
 const cachedDevices = computed(() => cyclingStore.savedDevices)
 
 /**
- * 处理扫描模式选择
- */
-function handleScanModeSelect({ key }: { key: string }): void {
-  switch (key) {
-    case 'smart':
-      startDeviceDiscovery()
-      break
-    case 'multi':
-      startMultiDeviceDiscovery()
-      break
-    case 'single':
-      startSingleDeviceDiscovery()
-      break
-  }
-}
-
-/**
- * 全选设备类型
- */
-function selectAllDeviceTypes(): void {
-  selectedDeviceTypes.value = [
-    CyclingDeviceType.TRAINER,
-    CyclingDeviceType.POWER_METER,
-    CyclingDeviceType.HEART_RATE,
-    CyclingDeviceType.ELECTRONIC_SHIFTING,
-  ]
-}
-
-/**
- * 清空设备类型选择
- */
-function clearDeviceTypeSelection(): void {
-  selectedDeviceTypes.value = []
-}
-
-/**
  * 格式化最后连接时间
  */
 function formatLastConnected(date: Date): string {
@@ -392,52 +319,14 @@ function formatLastConnected(date: Date): string {
 }
 
 /**
- * 设备类型过滤变化
+ * 设备类型变化
  */
 function onDeviceTypeChange() {
-  // 可以在这里添加过滤逻辑
-  console.log('Selected device types:', selectedDeviceTypes.value)
+  console.log('Selected device type:', selectedDeviceType.value)
 }
 
 /**
- * 开始设备发现
- */
-async function startDeviceDiscovery(): Promise<void> {
-  if (!bluetoothStore.isSupported) {
-    message.error('浏览器不支持Web Bluetooth API')
-    return
-  }
-
-  if (selectedDeviceTypes.value.length === 0) {
-    message.warning('请至少选择一种设备类型')
-    return
-  }
-
-  try {
-    // 清除之前发现的设备
-    bluetoothStore.clearDiscoveredDevices()
-
-    // 使用智能设备发现功能
-    const discoveredDevicesList = await bluetoothStore.smartDeviceDiscovery(
-      selectedDeviceTypes.value,
-    )
-
-    if (discoveredDevicesList.length > 0) {
-      const deviceTypeNames = [
-        ...new Set(discoveredDevicesList.map((d) => getDeviceTypeLabel(d.type))),
-      ]
-      message.success(`发现设备支持: ${deviceTypeNames.join('、')}`)
-    } else {
-      message.info('未发现任何设备，请确保设备已开启并处于配对模式')
-    }
-  } catch (error: any) {
-    currentScanningType.value = null
-    handleDiscoveryError(error)
-  }
-}
-
-/**
- * 开始传统单设备类型扫描（备用方法）
+ * 开始单设备发现
  */
 async function startSingleDeviceDiscovery(): Promise<void> {
   if (!bluetoothStore.isSupported) {
@@ -445,27 +334,13 @@ async function startSingleDeviceDiscovery(): Promise<void> {
     return
   }
 
-  if (selectedDeviceTypes.value.length === 0) {
-    message.warning('请至少选择一种设备类型')
-    return
-  }
-
   try {
     // 清除之前发现的设备
     bluetoothStore.clearDiscoveredDevices()
 
-    // 逐个扫描选中的设备类型
-    for (const deviceType of selectedDeviceTypes.value) {
-      currentScanningType.value = deviceType
-      try {
-        await bluetoothStore.scanDevices(deviceType)
-        message.success(`发现 ${getDeviceTypeLabel(deviceType)} 设备`)
-      } catch (error: any) {
-        if (error.message !== '用户取消选择设备') {
-          console.warn(`扫描 ${getDeviceTypeLabel(deviceType)} 失败:`, error)
-        }
-      }
-    }
+    currentScanningType.value = selectedDeviceType.value
+    await bluetoothStore.scanDevices(selectedDeviceType.value)
+    message.success(`发现 ${getDeviceTypeLabel(selectedDeviceType.value)} 设备`)
 
     currentScanningType.value = null
 
@@ -477,40 +352,6 @@ async function startSingleDeviceDiscovery(): Promise<void> {
     handleDiscoveryError(error)
   }
 }
-
-/**
- * 开始多设备类型扫描
- */
-async function startMultiDeviceDiscovery(): Promise<void> {
-  if (!bluetoothStore.isSupported) {
-    message.error('浏览器不支持Web Bluetooth API')
-    return
-  }
-
-  if (selectedDeviceTypes.value.length === 0) {
-    message.warning('请至少选择一种设备类型')
-    return
-  }
-
-  try {
-    // 清除之前发现的设备
-    bluetoothStore.clearDiscoveredDevices()
-
-    // 使用多设备扫描功能
-    await bluetoothStore.scanMultipleDevices(selectedDeviceTypes.value)
-
-    if (discoveredDevices.value.length > 0) {
-      message.success(`发现设备: ${discoveredDevices.value[0].name}`)
-    } else {
-      message.info('未发现任何设备，请确保设备已开启并处于配对模式')
-    }
-  } catch (error: any) {
-    currentScanningType.value = null
-    handleDiscoveryError(error)
-  }
-}
-
-// 注意：设备发现和类型判断逻辑已移至 useBluetooth hooks 中
 
 /**
  * 处理设备发现错误
@@ -542,15 +383,6 @@ const deviceTypeStringToEnum: Record<string, CyclingDeviceType> = {
   heart_rate: CyclingDeviceType.HEART_RATE,
   electronic_shifting: CyclingDeviceType.ELECTRONIC_SHIFTING,
 }
-
-/**
- * 将字符串设备类型转换为枚举
- */
-function convertStringToDeviceType(typeString: string): CyclingDeviceType {
-  return deviceTypeStringToEnum[typeString] || CyclingDeviceType.TRAINER
-}
-
-// 设备类型判断逻辑已移至 useBluetooth hooks 中
 
 /**
  * 连接到设备
